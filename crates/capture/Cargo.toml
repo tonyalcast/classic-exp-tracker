@@ -1,0 +1,13 @@
+[package]
+name = "capture"
+description = "Passive capture of the game window"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[dependencies]
+xcap = { version = "0.9.10", default-features = false }
+image = { version = "0.25.10", default-features = false, features = ["png"] }
+
+[target.'cfg(windows)'.dependencies]
+xcap = { version = "0.9.10", default-features = false, features = ["wgc"] }

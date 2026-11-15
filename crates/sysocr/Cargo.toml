@@ -1,0 +1,17 @@
+[package]
+name = "sysocr"
+description = "One-shot text recognition through the OS OCR engine"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[dependencies]
+image = { version = "0.25.10", default-features = false, features = ["png"] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2 = "0.6.5"
+objc2-foundation = "0.3.2"
+objc2-vision = "0.3.2"
+
+[target."cfg(windows)".dependencies]
+windows = { version = "0.62", features = ["Media_Ocr", "Graphics_Imaging", "Security_Cryptography", "Storage_Streams", "Foundation", "Foundation_Collections"] }

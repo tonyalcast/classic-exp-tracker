@@ -1,0 +1,26 @@
+[package]
+name = "classic-exp-tracker"
+description = "MapleStory Classic EXP rate tracker"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[lib]
+# Unique lib name avoids a bin/lib name clash on Windows.
+name = "classic_exp_tracker_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+exp-core = { path = "../crates/exp-core" }
+tauri = { version = "2", features = ["macos-private-api"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tauri-plugin-global-shortcut = "2"
+rusqlite = { version = "0.42.0", features = ["bundled"] }
+capture = { version = "0.1.0", path = "../crates/capture" }
+base64 = "0.23.1"
+ocr = { version = "0.1.0", path = "../crates/ocr" }
+sysocr = { version = "0.1.0", path = "../crates/sysocr" }

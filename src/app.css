@@ -1,0 +1,220 @@
+/* Maple Classic look built from the in-game status bar: steel, night glass, level orange, EXP lime only on the bar. */
+:root {
+  --bg-0: #070b13;
+  --bg-1: #0f1626;
+  --night-glow: #22314d;
+  --glass-a: rgba(24, 32, 48, 0.92);
+  --glass-b: rgba(12, 17, 28, 0.92);
+  --rim: rgba(177, 193, 205, 0.32);
+  --steel-a: #5a636b;
+  --steel-b: #2e353b;
+  --steel-edge: #b1c1cd;
+  --text: #e8eef6;
+  --title: #ffffff;
+  --muted: #9aa7b8;
+  --accent: #38c8ff;
+  --accent-hi: #a6ecff;
+  --accent-lo: #1590c9;
+  --accent-ink: #04263a;
+  --accent-soft: rgba(56, 200, 255, 0.12);
+  --digits: #ffe066;
+  --digits-edge: #4a2000;
+  --chat: #ffd400;
+  --lv: #ff7d12;
+  --lv-hi: #ffa04d;
+  --lv-lo: #d45f00;
+  --lv-text: #ff9a3d;
+  --exp-hi: #def700;
+  --exp-lo: #a7bb00;
+  --bar-empty: #3b424d;
+  --hp: #e5484d;
+  --bad: #ff7a7e;
+  --warn: #ffd400;
+  --good: var(--accent);
+  --gold: var(--chat);
+  --row: rgba(0, 0, 0, 0.28);
+  --win-inner: rgba(177, 193, 205, 0.18);
+  --font: "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-digits: "Fredoka", "Nunito", system-ui, sans-serif;
+  color-scheme: dark;
+}
+
+html,
+body {
+  margin: 0;
+  background: transparent;
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+  cursor: default;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Tooltip-style night glass panel with a thin steel rim. */
+.glass {
+  background: linear-gradient(var(--glass-a), var(--glass-b));
+  border: 1px solid var(--rim);
+  border-radius: 6px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 0 0 1px #000,
+    0 6px 16px rgba(0, 0, 0, 0.45);
+}
+
+/* Bevelled square like a quick-slot. */
+.slot {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 5px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(#2a323c, #151b23);
+  border: 1px solid #0b0f16;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 0 0 1px rgba(177, 193, 205, 0.28);
+}
+
+/* Yellow digits with a dark outline, like damage numbers. */
+.dmg {
+  font-family: var(--font-digits);
+  font-weight: 700;
+  line-height: 1;
+  color: var(--digits);
+  font-variant-numeric: tabular-nums;
+  text-shadow:
+    0 2px 0 var(--digits-edge),
+    1px 0 0 var(--digits-edge),
+    -1px 0 0 var(--digits-edge),
+    0 -1px 0 var(--digits-edge),
+    1px 1px 0 var(--digits-edge),
+    -1px 1px 0 var(--digits-edge);
+}
+
+.caps {
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+.tag.ahead {
+  color: var(--accent);
+  border: 1px solid rgba(56, 200, 255, 0.6);
+  background: var(--accent-soft);
+}
+.tag.behind {
+  color: var(--bad);
+  border: 1px solid rgba(229, 72, 77, 0.6);
+  background: rgba(229, 72, 77, 0.1);
+}
+.tag.afk {
+  color: #1a1400;
+  background: var(--chat);
+}
+
+button {
+  font: inherit;
+  font-weight: 900;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: #fff;
+  background: linear-gradient(var(--steel-a), var(--steel-b));
+  border: 1px solid var(--steel-edge);
+  border-radius: 4px;
+  padding: 7px 12px;
+  cursor: pointer;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    0 0 0 1px #000,
+    0 2px 0 #0b0f16;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6);
+}
+
+button:hover:not(:disabled) {
+  filter: brightness(1.15);
+}
+
+button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+button.primary {
+  color: var(--accent-ink);
+  background: linear-gradient(var(--accent-hi), var(--accent) 50%, var(--accent-lo));
+  border-color: #0b4a6b;
+  text-shadow: none;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    0 0 0 1px #000,
+    0 3px 0 #08344d;
+}
+
+/* Small square +/- style button. */
+button.sq {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 3px;
+  font-size: 14px;
+  line-height: 1;
+}
+
+button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+input {
+  font: inherit;
+  color: var(--text);
+  background: var(--bg-0);
+  border: 1px solid var(--win-inner);
+  border-radius: 4px;
+  padding: 6px 8px;
+  width: 100%;
+}
+
+select {
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(var(--steel-a), var(--steel-b));
+  border: 1px solid var(--steel-edge);
+  border-radius: 3px;
+  padding: 2px 6px;
+}
+
+.chip {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--chat);
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 3px;
+  padding: 1px 6px;
+}

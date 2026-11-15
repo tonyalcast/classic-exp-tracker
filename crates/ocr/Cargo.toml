@@ -1,0 +1,9 @@
+[package]
+name = "ocr"
+description = "Glyph template OCR for the MapleStory Classic status bar"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[dependencies]
+image = { version = "0.25.10", default-features = false, features = ["png"] }
