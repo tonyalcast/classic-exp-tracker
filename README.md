@@ -103,6 +103,10 @@ pnpm fix:signing        # once: stop keychain password prompts when signing
 
 `pnpm app:mac` signs with the identity in `APPLE_SIGNING_IDENTITY` from an untracked `.env.local` (see `.env.example`). A stable identity keeps the Screen Recording permission across rebuilds.
 
+## License
+
+[MIT](LICENSE). The bundled Nunito and Fredoka fonts are under the SIL Open Font License.
+
 ## Disclaimer
 
 Independent fan project, not affiliated with or endorsed by Nexon. MapleStory is a trademark of Nexon. The app only reads pixels that are already on your screen.
