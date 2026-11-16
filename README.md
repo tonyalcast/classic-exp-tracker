@@ -58,6 +58,12 @@ game window ──capture──▶ status bar crop ──glyph OCR──▶ EXP 
 
 Details, decisions and the full spec are in [docs/base_context.md](docs/base_context.md).
 
+## Install
+
+**Windows:** download the latest `*_x64-setup.exe` (or `.msi`) from [Releases](https://github.com/tonyalcast/classic-exp-tracker/releases/latest) and run it. The installer is not code-signed yet, so SmartScreen may warn you: click **More info → Run anyway**. Needs Windows 10/11 x64 with WebView2 (preinstalled on up-to-date systems).
+
+**macOS:** build from source (see [Development](#development)).
+
 ## Platforms
 
 - **macOS:** works with the Classic client in windowed mode. Needs Screen Recording permission for the app.
@@ -102,6 +108,16 @@ pnpm fix:signing        # once: stop keychain password prompts when signing
 ```
 
 `pnpm app:mac` signs with the identity in `APPLE_SIGNING_IDENTITY` from an untracked `.env.local` (see `.env.example`). A stable identity keeps the Screen Recording permission across rebuilds.
+
+### Windows release
+
+Pushing a `v*` tag (or running the workflow by hand) triggers [.github/workflows/release-windows.yml](.github/workflows/release-windows.yml): it runs the Rust tests on Windows, builds the installers and attaches them to a **draft** release. Bump `version` in `src-tauri/tauri.conf.json` first, since the release tag is taken from it.
+
+```bash
+git tag v0.1.0 && git push origin v0.1.0
+```
+
+Then review the draft on GitHub and publish it.
 
 ## License
 

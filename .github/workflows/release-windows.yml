@@ -1,0 +1,56 @@
+name: Release (Windows)
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-windows-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run Rust tests
+        run: cargo test --workspace
+
+      # Builds the NSIS .exe and .msi installers and attaches them to a draft release.
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: v__VERSION__
+          releaseName: Classic EXP Tracker v__VERSION__
+          releaseDraft: true
+          prerelease: false
+          releaseBody: |
+            ## Install on Windows
+
+            1. Download `Classic.EXP.Tracker_*_x64-setup.exe` below (or the `.msi`).
+            2. Run it. The installer is not code-signed yet, so Windows SmartScreen may show "Windows protected your PC": click **More info → Run anyway**.
+            3. Open **Classic EXP Tracker** from the Start menu and start the game in windowed mode.
+
+            Requires Windows 10 or 11 (x64) with WebView2, which is preinstalled on up-to-date systems.
