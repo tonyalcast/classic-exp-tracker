@@ -6,6 +6,7 @@ pub mod locate;
 pub mod mask;
 pub mod parse;
 pub mod read;
+pub mod scale;
 pub mod set;
 
 use image::RgbaImage;
@@ -14,6 +15,7 @@ pub use glyph::Glyph;
 pub use locate::{Labels, Layout};
 pub use mask::{Ink, Mask, Rect};
 pub use read::{LineRead, UNKNOWN};
+pub use scale::View;
 pub use set::GlyphSet;
 
 const STATUS_GLYPHS: &str = include_str!("../assets/status.glyphs");

@@ -72,7 +72,7 @@ On macOS the client runs under Wine from the launcher bundle; the game process i
 - The permission is tied to the code signature. An ad-hoc signature changes on every rebuild and the grant is lost; a stable identity keeps it. The identity is read from `APPLE_SIGNING_IDENTITY` in the untracked `.env.local` (see `.env.example`).
 - After an app update or a signing-identity change macOS can show the permission as on while capture still fails. Fix: remove the app from the Screen Recording list with **−**, add or reopen it, and grant again. Keep the same signing identity across releases to avoid this.
 - **Windows:** no permission needed.
-- The main window has a **Game capture** panel: permission status, request button, open-settings button and **Detect game window**, which captures one frame, shows a preview and saves it as `captures/last-capture.png` in the app-data directory.
+- The main window has a **Game capture** panel: permission status, request button, open-settings button and **Detect game window**, which captures one frame, shows a preview, saves it as `captures/last-capture.png` in the app-data directory and says whether the status bar was found and at which scale.
 
 ### 3.2 Display modes
 
@@ -127,10 +127,12 @@ Every reading is validated before being accepted (see 5.2), so a bad OCR read ne
 #### Implemented reader (`crates/ocr`)
 
 1. **Locate:** binarize the bottom 90 px of the window (pure white pixels) and slide the `EXP.` and `LV.` label templates over it (≤ 4% differing pixels). The EXP region is to the right of `EXP.`; the level region is the bounding box of the orange tiles right of `LV.`. Re-run when the window size changes or after 3 failed reads.
+   - **Display scaling (`scale.rs`):** when the 1:1 match fails, the capture may be stretched by the OS (Windows scales DPI-unaware games to 125%, 150%… with bilinear blur). The reader then tries the Windows scale steps 125–300%: a coarse pass picks the scale by label match (≤ 20% differing pixels), a fine pass picks the sub-pixel offset (8×8 grid) by how many glyphs of the EXP and level lines read. The band is rebuilt at 1:1 by sampling each game pixel at its center plus a contrast stretch (40–175) that puts blurred ink back over the color thresholds. All later steps run on that rebuilt band. The found view is kept; the full search (≤ 0.5 s) runs at most every 10 s while the status bar is not found. Rebuilding the band costs ~0.7 ms per read.
+   - Verified only on synthetic stretches of the reference capture: bilinear 125–300% at every sub-pixel offset read exactly; sharpened (Catmull-Rom) stretches fail at 250% and up.
 2. **Binarize:** EXP font ink = white or green (brackets); level ink = pure white.
 3. **Segment:** split glyphs on empty columns, trim each to its ink, and store its top relative to the tallest glyph (so `,` and `.` are told apart and ROI shifts do not matter).
 4. **Match:** exact template lookup by size and shape, tolerating 1 differing pixel and ±1 px vertical offset. Unmatched glyphs become `?`.
-5. **Parse:** `54,244[31.14%]` → `(54244, 31.14)`; text after `]` is ignored.
+5. **Parse:** `54,244[31.14%]` → `(54244, 31.14)`; text after `]` is ignored; a `.` in the EXP value is read as a `,` (rescaled commas can look like dots).
 6. **Change detection:** an FNV hash of both regions skips reading when nothing changed.
 
 Measured on the reference capture (release build): locate 10 ms once, read 21 µs per frame.

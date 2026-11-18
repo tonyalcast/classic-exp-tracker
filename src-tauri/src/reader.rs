@@ -1,9 +1,9 @@
 use std::path::PathBuf;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use capture::{GameWindow, RgbaImage, image::imageops};
 use exp_core::{ExpReading, ExpTable};
-use ocr::{Fonts, GlyphSet, Layout, LineRead, Rect, learn, locate};
+use ocr::{Fonts, GlyphSet, Layout, LineRead, Rect, View, learn, scale};
 use serde::Serialize;
 
 use crate::state::unix_ms;
@@ -14,6 +14,8 @@ const RELOCATE_AFTER: u32 = 3;
 const LEVEL_UP_DROP: f64 = 50.0;
 /// Game level cap.
 const MAX_LEVEL: u32 = 100;
+/// Minimum time between full display-scale searches while the status bar is not found.
+const SEARCH_EVERY: Duration = Duration::from_secs(10);
 
 /// What the UI shows about the OCR pipeline.
 #[derive(Debug, Clone, Serialize, Default)]
@@ -56,7 +58,12 @@ pub struct Reader {
     table: ExpTable,
     dir: PathBuf,
     window: Option<GameWindow>,
+    /// Size of the capture the layout was found in.
+    dims: Option<(u32, u32)>,
+    /// How game pixels map onto the capture (1:1, or stretched by OS display scaling).
+    view: View,
     layout: Option<Layout>,
+    next_search: Option<Instant>,
     last_hash: Option<u64>,
     level: Option<u32>,
     last_pct: Option<f64>,
@@ -80,7 +87,10 @@ impl Reader {
             table,
             dir,
             window: None,
+            dims: None,
+            view: View::NATIVE,
             layout: None,
+            next_search: None,
             last_hash: None,
             level: None,
             last_pct: None,
@@ -192,7 +202,7 @@ impl Reader {
         Ok(Some((ExpReading::new(level, value, percent), line.text)))
     }
 
-    // Captures the game window and keeps the layout fresh.
+    // Captures the game window, keeps the layout fresh and returns the status bar band at 1:1.
     fn frame(&mut self) -> Result<(RgbaImage, Layout), String> {
         if self.window.is_none() {
             self.window = GameWindow::find().map_err(|e| e.to_string())?;
@@ -205,12 +215,38 @@ impl Reader {
                 return Err(format!("Capture failed: {e}"));
             }
         };
-        if self.layout.is_none_or(|l| (l.image_w, l.image_h) != img.dimensions()) {
-            self.layout = locate::locate(&img, &self.fonts.labels);
+        if self.dims != Some(img.dimensions()) {
+            self.dims = Some(img.dimensions());
+            self.layout = None;
+        }
+        if self.layout.is_none() {
+            self.layout = self.find_layout(&img);
             self.last_hash = None;
         }
-        let layout = self.layout.ok_or("Status bar not visible")?;
-        Ok((img, layout))
+        let Some(layout) = self.layout else {
+            return Err(not_visible(&img));
+        };
+        Ok((self.view.band(&img), layout))
+    }
+
+    // Known view first, then 1:1; the full scale search runs at most every SEARCH_EVERY.
+    fn find_layout(&mut self, img: &RgbaImage) -> Option<Layout> {
+        for view in [self.view, View::NATIVE] {
+            if let Some(layout) = scale::locate_in(img, &self.fonts.labels, view) {
+                self.view = view;
+                self.next_search = None;
+                return Some(layout);
+            }
+        }
+        let now = Instant::now();
+        if self.next_search.is_some_and(|t| now < t) {
+            return None;
+        }
+        self.next_search = Some(now + SEARCH_EVERY);
+        let (view, layout) = scale::detect(img, &self.fonts)?;
+        self.view = view;
+        self.next_search = None;
+        Some(layout)
     }
 
     fn infer_exp(&mut self, line: &LineRead, required: u64) -> bool {
@@ -260,6 +296,18 @@ fn load(dir: &std::path::Path, font: Font) -> Option<GlyphSet> {
     std::fs::read_to_string(dir.join(font.file()))
         .ok()
         .and_then(|t| GlyphSet::from_text(&t).ok())
+}
+
+// Error for a capture without a status bar, with a hint when the capture is blank.
+fn not_visible(img: &RgbaImage) -> String {
+    let (w, h) = img.dimensions();
+    let step = (w.max(h) / 64).max(1) as usize;
+    let blank = img.pixels().step_by(step).all(|p| p.0[..3].iter().all(|&c| c < 16));
+    if blank {
+        format!("Game capture is blank ({w}×{h}); use windowed or borderless mode")
+    } else {
+        format!("Status bar not visible in the {w}×{h} capture")
+    }
 }
 
 fn crop(img: &RgbaImage, r: Rect) -> RgbaImage {

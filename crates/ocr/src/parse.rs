@@ -2,7 +2,8 @@
 pub fn parse_exp(text: &str) -> Option<(u64, f64)> {
     let line = &text[..text.find(']')?];
     let (exp, pct) = line.split_once('[')?;
-    let digits: String = exp.chars().filter(|c| *c != ',').collect();
+    // A rescaled comma can read as a dot; the EXP value never has decimals.
+    let digits: String = exp.chars().filter(|c| !matches!(c, ',' | '.')).collect();
     if digits.is_empty() || !digits.bytes().all(|b| b.is_ascii_digit()) {
         return None;
     }
@@ -31,6 +32,7 @@ mod tests {
         assert_eq!(parse_exp("54,244[31.14%]"), Some((54_244, 31.14)));
         assert_eq!(parse_exp("1,234,567[0.05%]??"), Some((1_234_567, 0.05)));
         assert_eq!(parse_exp("0[0.00%]"), Some((0, 0.0)));
+        assert_eq!(parse_exp("54.244[31.14%]"), Some((54_244, 31.14)));
         assert_eq!(parse_exp("54,2?4[31.14%]"), None);
         assert_eq!(parse_exp("54,244[31.14]"), None);
         assert_eq!(parse_exp("54,244 31.14%"), None);

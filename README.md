@@ -67,7 +67,7 @@ Details, decisions and the full spec are in [docs/base_context.md](docs/base_con
 ## Platforms
 
 - **macOS:** works with the Classic client in windowed mode. Needs Screen Recording permission for the app.
-- **Windows:** builds and uses Windows Graphics Capture and Windows OCR; not yet tested on a real Windows machine.
+- **Windows:** uses Windows Graphics Capture and Windows OCR. Display scaling (125%, 150%…) that stretches the game is detected and undone before reading; if the status bar is still not found, use **Detect game window** in the Game capture panel and attach `last-capture.png` to an issue.
 
 ## Tech
 

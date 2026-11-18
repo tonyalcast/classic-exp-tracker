@@ -1,6 +1,6 @@
 {
   "name": "classic-exp-tracker",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "MapleStory Classic EXP rate tracker",
   "type": "module",
   "scripts": {

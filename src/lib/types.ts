@@ -83,6 +83,7 @@ export interface Detection {
   imageHeight: number | null;
   preview: string | null;
   savedPath: string | null;
+  statusBar: string | null;
 }
 
 // Mirrors reader::ReaderStatus.

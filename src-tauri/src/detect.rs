@@ -50,6 +50,8 @@ pub struct Detection {
     /// PNG data URL of a downscaled capture.
     pub preview: Option<String>,
     pub saved_path: Option<String>,
+    /// Where the status bar was found, e.g. "1:1" or "125% scaling"; None when not found.
+    pub status_bar: Option<String>,
 }
 
 /// Finds the game window, captures it once and saves the full frame to `out_dir`.
@@ -65,6 +67,7 @@ pub fn detect(out_dir: &Path) -> Result<Detection, String> {
         image_height: None,
         preview: None,
         saved_path: None,
+        status_bar: None,
     };
     let Some(game) = GameWindow::find().map_err(|e| e.to_string())? else {
         return Ok(d);
@@ -77,6 +80,9 @@ pub fn detect(out_dir: &Path) -> Result<Detection, String> {
     d.image_height = Some(img.height());
     d.saved_path = Some(save(&img, out_dir)?.display().to_string());
     d.preview = Some(preview(&img)?);
+    d.status_bar = ocr::scale::detect(&img, &ocr::Fonts::builtin()).map(|(view, _)| {
+        if view.is_native() { "1:1".into() } else { format!("{:.0}% scaling", view.scale * 100.0) }
+    });
     Ok(d)
 }
 

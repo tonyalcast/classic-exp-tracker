@@ -75,6 +75,7 @@
         <dt>Window</dt><dd class="num">{detection.window.width}×{detection.window.height} @ {detection.window.x},{detection.window.y}</dd>
         <dt>Capture</dt><dd class="num">{detection.imageWidth}×{detection.imageHeight} px · {detection.captureMs?.toFixed(1)} ms</dd>
         <dt>Saved</dt><dd class="path">{detection.savedPath}</dd>
+        <dt>Status bar</dt><dd>{detection.statusBar ? `Found (${detection.statusBar})` : "Not found"}</dd>
       </dl>
       {#if detection.preview}
         <img src={detection.preview} alt="Game window capture" />

@@ -3,9 +3,9 @@ use image::RgbaImage;
 use crate::mask::{Ink, Mask, Rect};
 
 /// Height of the bottom band searched for the status bar labels.
-const BAND: u32 = 90;
-/// Fraction of label pixels allowed to differ.
-const MAX_MISMATCH: f64 = 0.04;
+pub const BAND: u32 = 90;
+/// Fraction of label pixels allowed to differ on a 1:1 capture.
+pub const MAX_MISMATCH: f64 = 0.04;
 /// EXP value spans from the end of the `EXP.` label to this many px right of its start.
 const EXP_SPAN: u32 = 128;
 /// Vertical padding around label rows for value regions.
@@ -40,10 +40,17 @@ pub struct Labels {
 
 /// Finds the status bar fields; None when the labels are not visible.
 pub fn locate(img: &RgbaImage, labels: &Labels) -> Option<Layout> {
+    locate_scored(img, labels, MAX_MISMATCH).map(|(l, _)| l)
+}
+
+/// Like [`locate`] with a custom label tolerance; also returns the labels' mismatch fraction.
+pub fn locate_scored(img: &RgbaImage, labels: &Labels, max_mismatch: f64) -> Option<(Layout, f64)> {
     let band_y = img.height().saturating_sub(BAND);
     let band = Mask::from_image(img, Rect::new(0, band_y, img.width(), BAND), Ink::White);
-    let (ex, ey) = find(&band, &labels.exp)?;
-    let (lx, ly) = find(&band, &labels.level)?;
+    let (ex, ey, ed) = find_scored(&band, &labels.exp, max_mismatch)?;
+    let (lx, ly, ld) = find_scored(&band, &labels.level, max_mismatch)?;
+    let area = labels.exp.w * labels.exp.h + labels.level.w * labels.level.h;
+    let score = (ed + ld) as f64 / f64::from(area);
     let exp_label = Rect::new(ex, band_y + ey, labels.exp.w, labels.exp.h);
     let level_label = Rect::new(lx, band_y + ly, labels.level.w, labels.level.h);
 
@@ -67,11 +74,17 @@ pub fn locate(img: &RgbaImage, labels: &Labels) -> Option<Layout> {
     let name = Rect::new(level.x + level.w + NAME_DX, level_label.y + NAME_DY, NAME_W, NAME_H)
         .clamp(img.width(), img.height());
 
-    Some(Layout { image_w: img.width(), image_h: img.height(), exp_label, level_label, exp, level, name })
+    let layout = Layout { image_w: img.width(), image_h: img.height(), exp_label, level_label, exp, level, name };
+    Some((layout, score))
 }
 
 /// Best position of `needle` inside `hay`, if close enough.
 pub fn find(hay: &Mask, needle: &Mask) -> Option<(u32, u32)> {
+    find_scored(hay, needle, MAX_MISMATCH).map(|(x, y, _)| (x, y))
+}
+
+/// Best position of `needle` inside `hay` and its differing pixel count, within `max_mismatch`.
+pub fn find_scored(hay: &Mask, needle: &Mask, max_mismatch: f64) -> Option<(u32, u32, usize)> {
     if needle.w > hay.w || needle.h > hay.h || needle.ink_count() == 0 {
         return None;
     }
@@ -79,7 +92,7 @@ pub fn find(hay: &Mask, needle: &Mask) -> Option<(u32, u32)> {
         .flat_map(|y| (0..needle.w).map(move |x| (x, y)))
         .filter(|&(x, y)| needle.get(x, y))
         .collect();
-    let limit = ((needle.w * needle.h) as f64 * MAX_MISMATCH).floor() as usize;
+    let limit = ((needle.w * needle.h) as f64 * max_mismatch).floor() as usize;
     let mut best: Option<(usize, u32, u32)> = None;
     for oy in 0..=hay.h - needle.h {
         for ox in 0..=hay.w - needle.w {
@@ -105,7 +118,7 @@ pub fn find(hay: &Mask, needle: &Mask) -> Option<(u32, u32)> {
             }
         }
     }
-    best.map(|(_, x, y)| (x, y))
+    best.map(|(d, x, y)| (x, y, d))
 }
 
 // Bounding box of the orange tile pixels inside `search`.
